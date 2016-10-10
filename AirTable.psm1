@@ -4,30 +4,26 @@ $Global:AirTableHeaders = $null
 $Global:AirTableURI = "https://api.airtable.com/v0"
 
 
-Function Set-USPIAirTableAuth
+Function Set-AirTableAuth
 {
-    Param
-    (
-        [Parameter(Mandatory=$true)][string]$APIKey
-    )
+    Param ([Parameter(Mandatory=$true)][string]$APIKey)
 	
-	$Global:AirTableHeaders =
-    @{
+	$Global:AirTableHeaders = @{
 		'Authorization' = "Bearer " + $APIKey
 		'Content-Type' = $ContentJson
 		'Accept' = $ContentJson
-	}
+    }
 }
 
 
 
-Function Get-USPIAirTableRecords
+Function Get-AirTableRecords
 {
     Param
     (
-        [Parameter()][ValidateNotNullOrEmpty()][string]$AirTableBaseKey,
-        [Parameter()][ValidateNotNullOrEmpty()][string]$Table,
-        [Parameter()][ValidateNotNullOrEmpty()][string]$Filter
+        [string]$AirTableBaseKey,
+        [string]$Table,
+        [string]$Filter
     )
 
     If ($Filter)
@@ -86,6 +82,7 @@ Function Get-USPIAirTableRecords
     } Until (!$Content.offset)
             
     Write-Host -ForegroundColor Green "Get-USPIAirTableRecords: Query complete."
+    
     Write-Host -ForegroundColor Gray "$($Records.count) records found."
 
     Return $Records
@@ -93,18 +90,20 @@ Function Get-USPIAirTableRecords
 
 
 
-Function Add-USPIAirTableRecord
+Function Add-AirTableRecord
 {
     Param
     (
-        [Parameter()][ValidateNotNullOrEmpty()][string]$AirTableBaseKey,
-        [Parameter()][ValidateNotNullOrEmpty()][string]$Table,
-        [Parameter()][ValidateNotNullOrEmpty()]$Record
+        [string]$AirTableBaseKey,
+        [string]$Table,
+        $Record
     )
 
     $JSONPrep = @{"fields" = $Record}
     $JSONBody = ($JSONPrep | ConvertTo-Json)
+    
     $Response = iwr -Method Post -Uri ("$AirTableURI/$AirTableBaseKey/$Table") -Headers $AirTableHeaders -Body $JSONBody
+    
     If ($Response.StatusCode -eq 200)
     {
         Return ($Response.content | ConvertFrom-Json)
@@ -117,19 +116,21 @@ Function Add-USPIAirTableRecord
 
 
 
-Function Update-USPIAirTableRecord
+Function Update-AirTableRecord
 {
     Param
     (
-        [Parameter()][ValidateNotNullOrEmpty()][string]$AirTableBaseKey,
-        [Parameter()][ValidateNotNullOrEmpty()][string]$Table,
-        [Parameter()][ValidateNotNullOrEmpty()][string]$RecordID,
-        [Parameter()][ValidateNotNullOrEmpty()]$Record
+        [string]$AirTableBaseKey,
+        [string]$Table,
+        [string]$RecordID,
+        $Record
     )
 
     $JSONPrep = @{"fields" = $Record}
     $JSONBody = $JSONPrep | ConvertTo-Json
+    
     $Response = iwr -Method Patch -URI ("$AirTableURI/$AirTableBaseKey/$Table/$RecordID") -Headers $AirTableHeaders -Body $JSONBody
+    
     If ($Response.StatusCode -eq 200)
     {
         Return ($Response.content | ConvertFrom-Json)
@@ -141,16 +142,17 @@ Function Update-USPIAirTableRecord
 }
 
 
-Function Remove-USPIAirTableRecord
+Function Remove-AirTableRecord
 {
     Param
     (
-        [Parameter()][ValidateNotNullOrEmpty()][string]$AirTableBaseKey,
-        [Parameter()][ValidateNotNullOrEmpty()][string]$Table,
-        [Parameter()][ValidateNotNullOrEmpty()][string]$RecordID
+        [string]$AirTableBaseKey,
+        [string]$Table,
+        [string]$RecordID
     )
 
     $Response = iwr -Method Delete -URI ("$AirTableURI/$AirTableBaseKey/$Table/$RecordID") -Headers $AirTableHeaders
+    
     If ($Response.StatusCode -eq 200)
     {
         $Content = ($Response.content | ConvertFrom-Json)
